@@ -74,10 +74,10 @@ MACOSX_DEPLOYMENT_TARGET = "12.0"
 
 [tool.cibuildwheel.windows]
 before-build = "pip install delvewheel"
-repair-wheel-command = "delvewheel repair --add-path C:/vcpkg/installed/x64-windows-dynamic-release/bin -w {dest_dir} {wheel}"
+repair-wheel-command = "delvewheel repair --add-path C:/vcpkg/installed/x86-windows-dynamic-release/bin -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.windows.environment]
-VCPKG_INSTALL = "$VCPKG_INSTALLATION_ROOT/installed/x64-windows-dynamic-release"
+VCPKG_INSTALL = "$VCPKG_INSTALLATION_ROOT/installed/x86-windows-dynamic-release"
 GDAL_INCLUDE_PATH = "$VCPKG_INSTALL/include"
 GDAL_LIBRARY_PATH = "$VCPKG_INSTALL/lib"
 GDAL_VERSION = "3.9.2"

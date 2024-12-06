@@ -94,57 +94,6 @@ jobs:
           uv run python -c "import pyogrio; print(f'GDAL version: {pyogrio.__gdal_version__}\nGEOS version: {pyogrio.__gdal_geos_version__}')"
           uv run python -m pytest --pyargs pyogrio.tests -v
 
-  build-wheels-linux:
-    name: Build wheels on Linux
-    runs-on: "ubuntu-latest"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # use manylinux2014 for older glibc platforms until discontinued
-          - wheel_name: "pyogrio-wheel-linux-manylinux2014_x86_64"
-            container: "ci/manylinux2014_x86_64-vcpkg-gdal.Dockerfile"
-
-          # use manylinux_2_28 for any platforms with glibc>=2.28
-          - wheel_name: "pyogrio-wheel-linux-manylinux_2_28_x86_64"
-            container: "ci/manylinux_2_28_x86_64-vcpkg-gdal.Dockerfile"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          install: true
-          buildkitd-flags: --debug
-
-      - name: Build Docker image with vcpkg and gdal
-        # using build-push-action (without push) to make use of cache arguments
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ${{ matrix.container }}
-          tags: manylinux-vcpkg-gdal:latest
-          push: false
-          load: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-        env:
-          BUILDKIT_PROGRESS: plain
-
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21.1
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.wheel_name }}
-          path: ./wheelhouse/*.whl
-          compression-level: 0
-
   build-wheels-mac-win:
     name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
@@ -152,20 +101,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: "macos-12"
-            triplet: "x64-osx-dynamic-release"
-            arch: x86_64
-            vcpkg_cache: "/Users/runner/.cache/vcpkg/archives"
-            vcpkg_logs: "/usr/local/share/vcpkg/buildtrees/**/*.log"
-
-          - os: "macos-12"
-            triplet: "arm64-osx-dynamic-release"
-            arch: arm64
-            vcpkg_cache: "/Users/runner/.cache/vcpkg/archives"
-            vcpkg_logs: "/usr/local/share/vcpkg/buildtrees/**/*.log"
-
           - os: "windows-2019"
-            triplet: "x64-windows-dynamic-release"
+            triplet: "x86-windows-dynamic-release"
             arch: AMD64
             # windows requires windows-specific paths
             vcpkg_cache: "c:\\vcpkg\\installed"
@@ -185,14 +122,6 @@ jobs:
             ${{ matrix.vcpkg_cache }}
           # bump the last digit to avoid using previous build cache
           key: ${{ matrix.os }}-${{ matrix.arch }}-vcpkg-gdal3.9.2-cache0
-
-      # MacOS build requires aclocal, which is part of automake, but appears
-      # to be missing in default image
-      - name: Reinstall automake
-        if: runner.os == 'macOS'
-        run: |
-          brew reinstall automake
-          echo $(which aclocal)
 
       - name: Checkout specific version of vcpkg
         shell: bash
@@ -234,33 +163,19 @@ jobs:
 
   test-wheels:
     name: Test wheels on ${{ matrix.os }} (Python ${{ matrix.python-version }})
-    needs: [build-wheels-linux, build-wheels-mac-win]
+    needs: [build-wheels-mac-win]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           [
-            "ubuntu-latest",
-            "ubuntu-20.04",
             "windows-latest",
-            "macos-12",
-            "macos-latest",
           ]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.12"]
         include:
-          - os: "ubuntu-latest"
-            artifact: pyogrio-wheel-linux-manylinux2014_x86_64
-          - os: "ubuntu-latest"
-            artifact: pyogrio-wheel-linux-manylinux_2_28_x86_64
-          - os: "ubuntu-20.04"
-            artifact: pyogrio-wheel-linux-manylinux_2_28_x86_64
           - os: "windows-latest"
-            artifact: pyogrio-wheel-x64-windows-dynamic-release
-          - os: "macos-12"
-            artifact: pyogrio-wheel-x64-osx-dynamic-release
-          - os: "macos-latest"
-            artifact: pyogrio-wheel-arm64-osx-dynamic-release
+            artifact: pyogrio-wheel-x86-windows-dynamic-release
 
     steps:
       - name: Checkout
@@ -271,19 +186,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-
-      - name: Create virtual environment (Linux / MacOS)
-        # install uv and use it to create a virtual environment, then add it to
-        # environment variables so that it is automatically activated and can be
-        # used for tests below
-        if: ${{ runner.os != 'Windows' }}
-        shell: bash
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          . $HOME/.cargo/env
-          uv venv .venv
-          echo "VIRTUAL_ENV=.venv" >> $GITHUB_ENV
-          echo "$PWD/.venv/bin" >> $GITHUB_PATH
 
       - name: Create virtual environment (Windows)
         if: ${{ runner.os == 'Windows' }}
