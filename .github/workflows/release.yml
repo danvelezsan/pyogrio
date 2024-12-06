@@ -90,7 +90,7 @@ jobs:
       matrix:
         include:
           - os: "windows-2019"
-            triplet: "x86-windows-release"
+            triplet: "x86-windows"
             arch: AMD64
             # windows requires windows-specific paths
             vcpkg_cache: "c:\\vcpkg\\installed"
@@ -126,7 +126,7 @@ jobs:
           VCPKG_DEFAULT_TRIPLET: ${{ matrix.triplet }}
         shell: bash
         run: |
-          vcpkg install --overlay-triplets=./ci/custom-triplets --feature-flags="versions,manifests" --x-manifest-root=./ci --x-install-root=$VCPKG_INSTALLATION_ROOT/installed
+          vcpkg install --triplet=x86-windows --feature-flags="versions,manifests" --x-manifest-root=./ci --x-install-root=$VCPKG_INSTALLATION_ROOT/installed
           vcpkg list
 
       - name: Upload vcpkg build logs
@@ -163,7 +163,7 @@ jobs:
         python-version: ["3.12"]
         include:
           - os: "windows-latest"
-            artifact: pyogrio-wheel-x86-windows-release
+            artifact: pyogrio-wheel-x86-windows
 
     steps:
       - name: Checkout
