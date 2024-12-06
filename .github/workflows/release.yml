@@ -90,7 +90,7 @@ jobs:
       matrix:
         include:
           - os: "windows-2019"
-            triplet: "x86-windows-dynamic-release"
+            triplet: "x86-windows-release"
             arch: AMD64
             # windows requires windows-specific paths
             vcpkg_cache: "c:\\vcpkg\\installed"
@@ -163,7 +163,7 @@ jobs:
         python-version: ["3.12"]
         include:
           - os: "windows-latest"
-            artifact: pyogrio-wheel-x86-windows-dynamic-release
+            artifact: pyogrio-wheel-x86-windows-release
 
     steps:
       - name: Checkout
