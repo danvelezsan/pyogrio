@@ -1,11 +1,6 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main # just build the sdist & wheel, skip release
-    tags:
-      - "v*"
   workflow_dispatch:
   
 # cancel running jobs on new commit to PR
@@ -110,12 +105,9 @@ jobs:
           compression-level: 0
 
   publish:
-    name: Publish pyogrio to GitHub / PyPI
+    name: Publish pyogrio to GitHub
     needs: [build-sdist, build-wheels-mac-win]
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/pyogrio
     permissions:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing to PyPI
       contents: write # this permission is required for the Github release action
@@ -126,14 +118,3 @@ jobs:
           pattern: pyogrio-*
           path: dist
           merge-multiple: true
-
-      - name: Create GitHub Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Version 0.10.0
-          tag_name: 0.10.0
-          draft: false
-          prerelease: false
-          files: dist/*.tar.gz
-          token: ${{ secrets.GITHUB_TOKEN }}
