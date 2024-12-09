@@ -119,7 +119,6 @@ jobs:
           git reset --hard
           # pull specific commit with desired GDAL version
           git pull
-          git checkout 73794ce5f63fd138fab999a22959ca7c6305d93c
 
       - name: Install GDAL
         env:
