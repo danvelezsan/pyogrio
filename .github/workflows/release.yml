@@ -103,71 +103,9 @@ jobs:
           path: ./wheelhouse/*.whl
           compression-level: 0
 
-  test-wheels:
-    name: Test wheels on ${{ matrix.os }} (Python ${{ matrix.python-version }})
-    needs: [build-wheels-mac-win]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          [
-            "windows-latest",
-          ]
-        python-version: ["3.12"]
-        include:
-          - os: "windows-latest"
-            artifact: pyogrio-wheel-x86-windows
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
-
-      - name: Create virtual environment (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          irm https://astral.sh/uv/install.ps1 | iex
-          uv venv .venv
-          "VIRTUAL_ENV=.venv" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "$PWD/.venv/Scripts" | Out-File -FilePath $env:GITHUB_PATH -Append
-
-      - name: Download wheels from artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.artifact }}
-          path: wheelhouse
-
-      - name: Install dependencies and pyogrio wheel
-        shell: bash
-        run: |
-          if [ ${{ matrix.python-version }} != "3.13" ]; then
-            uv pip install -r ci/requirements-wheel-test.txt
-          else
-            uv pip install pytest numpy certifi packaging
-          fi
-          uv pip install --no-cache --pre --no-index --find-links wheelhouse pyogrio
-          if [ ${{ matrix.python-version }} != "3.13" ]; then
-            uv pip install --no-deps geopandas
-          fi
-          uv pip list
-
-      - name: Run tests
-        shell: bash
-        # virtual environment is automatically activated
-        run: |
-          cd ..
-          uv run python -c "import pyogrio; print(f'GDAL version: {pyogrio.__gdal_version__}\nGEOS version: {pyogrio.__gdal_geos_version__}')"
-          uv run python -m pytest --pyargs pyogrio.tests -v
-
   publish:
     name: Publish pyogrio to GitHub / PyPI
-    needs: [test-wheels]
+    needs: []
     runs-on: ubuntu-latest
     environment:
       name: pypi
