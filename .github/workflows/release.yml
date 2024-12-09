@@ -1,10 +1,12 @@
 name: Release
 
-on: 
-  workflow_dispatch
+on:
   push:
+    branches:
+      - main # just build the sdist & wheel, skip release
     tags:
       - "v*"
+  workflow_dispatch:
   
 
 # cancel running jobs on new commit to PR
