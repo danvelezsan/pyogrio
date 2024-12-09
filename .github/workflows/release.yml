@@ -111,6 +111,7 @@ jobs:
 
   publish:
     name: Publish pyogrio to GitHub / PyPI
+    needs: [build-wheels-mac-win]
     runs-on: ubuntu-latest
     environment:
       name: pypi
